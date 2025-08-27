@@ -38,10 +38,13 @@ jobs:
       - name: Build TypeScript
         run: npm run build
         
-      - name: Prepare dist directory
+      - name: Prepare deployment files
         run: |
-          mkdir -p dist
-          cp index.html dist/
+          # 배포용 폴더 생성
+          mkdir -p deploy
+          # 필요한 파일들 복사
+          cp index.html deploy/
+          cp -r dist/* deploy/
           
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -49,7 +52,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: './deploy'
 
   # Deployment job
   deploy:
