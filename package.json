@@ -1,0 +1,19 @@
+{
+  "name": "kollus-upload-api",
+  "version": "1.0.0",
+  "description": "Kollus Upload API TypeScript 라이브러리",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "npx http-server . -p 8080 -o"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "http-server": "^14.1.1"
+  },
+  "keywords": ["kollus", "upload", "api", "typescript"],
+  "author": "",
+  "license": "MIT"
+}
