@@ -261,7 +261,7 @@
 
     <script type="module">
         // TypeScript 모듈에서 클래스들을 import
-        import { KollusUploadAPI, UploadProgressMonitor, KollusUtils } from './dist/index.js?v=1';
+        import { KollusUploadAPI, UploadProgressMonitor, KollusUtils } from './dist/index.js';
 
         let api;
         let uploadUrl = '';
@@ -294,9 +294,16 @@
 
             try {
                 showResponse('urlResponse', '업로드 URL 생성 중...', '');
+                
+                // 디버깅: API 클래스 확인
+                console.log('KollusUploadAPI 클래스:', typeof KollusUploadAPI);
+                console.log('API 인스턴스 생성 시도...');
 
                 // API 인스턴스 생성
                 api = new KollusUploadAPI(accessToken);
+                
+                console.log('API 인스턴스 생성 성공:', api);
+                console.log('API 요청 시작...');
 
                 const urlResponse = await api.createUploadUrl({
                     expireTime: expireTime,
