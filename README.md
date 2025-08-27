@@ -4,7 +4,7 @@ Kollus Upload API TypeScript 라이브러리와 테스트 페이지입니다.
 
 ## 🚀 배포된 사이트
 
-GitHub Pages를 통해 배포된 사이트: https://[your-username].github.io/kollus/
+GitHub Pages를 통해 배포된 사이트: https://hye-ung97.github.io/kollus-upload-api/
 
 ## 📦 설치 및 실행
 
@@ -50,28 +50,9 @@ kollus/
     └── deploy.yml
 ```
 
-## 🔧 GitHub Pages 설정
-
-1. GitHub 저장소로 이동
-2. Settings > Pages
-3. Source를 "Deploy from a branch"로 설정
-4. Branch를 "gh-pages"로 설정
-5. Save 클릭
-
 ## 📝 사용법
 
 1. Access Token과 Category Key를 입력
 2. "업로드 URL 생성" 버튼 클릭
 3. 생성된 업로드 URL로 파일 업로드
 
-## 🤝 기여하기
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## �� 라이선스
-
-MIT License
