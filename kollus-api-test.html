@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kollus Upload API 테스트</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+
+
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .response-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+
+        .error {
+            background: #fff5f5;
+            border-color: #fed7d7;
+            color: #c53030;
+        }
+
+        .success {
+            background: #f0fff4;
+            border-color: #9ae6b4;
+            color: #2f855a;
+        }
+
+        .upload-section {
+            display: none;
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .upload-section.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .step {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .step h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .info-box {
+            background: #e6f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Kollus Upload API 테스트</h1>
+
+        <div class="info-box">
+            <h4>📋 사용 방법</h4>
+            <p>1. Access Token과 Category Key를 입력합니다<br>
+            2. "업로드 URL 생성" 버튼을 클릭합니다<br>
+            3. 생성된 업로드 URL로 파일을 업로드합니다</p>
+        </div>
+
+        <div class="step">
+            <h3>1단계: 업로드 URL 생성</h3>
+
+            <div class="form-group">
+                <label for="accessToken">Access Token *</label>
+                <input type="text" id="accessToken" placeholder="API 접근 토큰을 입력하세요">
+            </div>
+
+            <div class="form-group">
+                <label for="categoryKey">Category Key</label>
+                <input type="text" id="categoryKey" placeholder="카테고리 키를 입력하세요 (선택사항)">
+            </div>
+
+            <div class="form-group">
+                <label for="expireTime">만료 시간 (초)</label>
+                <input type="number" id="expireTime" value="600" min="1" max="21600">
+            </div>
+
+            <div class="form-group">
+                <label for="title">컨텐츠 제목</label>
+                <input type="text" id="title" placeholder="업로드할 파일의 제목 (선택사항)">
+            </div>
+
+            <div class="form-group">
+                <label for="uploadType">업로드 타입</label>
+                <select id="uploadType">
+                    <option value="normal">일반 업로드</option>
+                    <option value="passthrough">패스쓰루 업로드</option>
+                    <option value="filelive">파일라이브 업로드</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="profileKeyGroup" style="display: none;">
+                <label for="profileKey">Profile Key</label>
+                <input type="text" id="profileKey" placeholder="패스쓰루 업로드시 필수">
+            </div>
+
+            <button id="createUrlBtn">업로드 URL 생성</button>
+            <button id="clearBtn">결과 지우기</button>
+
+            <div id="urlResponse" class="response-container" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>2단계: 파일 업로드</h3>
+            <div class="upload-section" id="uploadSection">
+                <div class="form-group">
+                    <label for="fileInput">업로드할 파일 선택</label>
+                    <input type="file" id="fileInput" accept="video/*,audio/*,.mp4,.avi,.mov,.wmv,.flv,.webm,.mkv,.m4v,.3gp,.ts,.mts,.m2ts,.vob,.ogv,.asf,.rm,.rmvb,.dv,.mxf,.xvid,.divx,.f4v,.mp3,.wav,.aac,.ogg,.flac,.m4a,.wma,.ra,.amr,.ape,.opus,.qt,.3g2,.3gp2,.3gpp,.3gpp2,.3ga,.3ga2,.3gpa,.3gpp3,.3gpp4,.m4b,.m4p,.m4r,.f4a,.f4b,.f4p,.f4r,.f4s,.f4t,.f4u,.f4w,.f4x,.f4y,.f4z">
+                </div>
+
+                <div class="form-group">
+                    <label for="returnUrl">Return URL (선택사항)</label>
+                    <input type="text" id="returnUrl" placeholder="업로드 완료 후 리다이렉트할 URL">
+                </div>
+
+                <button id="uploadBtn">파일 업로드</button>
+                <button id="progressBtn">진행률 확인</button>
+
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+
+                <div id="uploadResponse" class="response-container" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // TypeScript 모듈에서 클래스들을 import
+        import { KollusUploadAPI, UploadProgressMonitor, KollusUtils } from './index.js';
+
+        let api;
+        let uploadUrl = '';
+        let progressUrl = '';
+        let uploadFileKey = '';
+        let progressMonitor;
+
+        // 업로드 타입 변경시 프로파일 키 필드 표시/숨김
+        document.getElementById('uploadType').addEventListener('change', function() {
+            const profileKeyGroup = document.getElementById('profileKeyGroup');
+            if (this.value === 'passthrough') {
+                profileKeyGroup.style.display = 'block';
+            } else {
+                profileKeyGroup.style.display = 'none';
+            }
+        });
+
+                async function createUploadUrl() {
+            const accessToken = document.getElementById('accessToken').value.trim();
+            const categoryKey = document.getElementById('categoryKey').value.trim();
+            const expireTime = parseInt(document.getElementById('expireTime').value);
+            const title = document.getElementById('title').value.trim();
+            const uploadType = document.getElementById('uploadType').value;
+            const profileKey = document.getElementById('profileKey').value.trim();
+
+            if (!accessToken) {
+                showResponse('urlResponse', 'Access Token을 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                showResponse('urlResponse', '업로드 URL 생성 중...', '');
+                
+                // 디버깅: API 클래스 확인
+                console.log('KollusUploadAPI 클래스:', typeof KollusUploadAPI);
+                console.log('API 인스턴스 생성 시도...');
+
+                // API 인스턴스 생성
+                api = new KollusUploadAPI(accessToken);
+                
+                console.log('API 인스턴스 생성 성공:', api);
+                console.log('API 요청 시작...');
+
+                const urlResponse = await api.createUploadUrl({
+                    expireTime: expireTime,
+                    categoryKey: categoryKey,
+                    title: title,
+                    uploadType: uploadType,
+                    profileKey: profileKey
+                });
+
+                // API 응답 디버깅
+                console.log('API 응답:', urlResponse);
+                console.log('응답 타입:', typeof urlResponse);
+                console.log('응답 키들:', Object.keys(urlResponse));
+
+                // 새로운 응답 구조 (data/status) 또는 기존 구조 (error/result) 모두 지원
+                let responseData;
+                let expireTimestamp;
+
+                if (urlResponse.status === 'ok' && urlResponse.data) {
+                    // 새로운 응답 구조
+                    responseData = urlResponse.data;
+                    expireTimestamp = urlResponse.data.expired_at;
+                } else if (urlResponse.error === 0 && urlResponse.result) {
+                    // 기존 응답 구조
+                    responseData = urlResponse.result;
+                    expireTimestamp = urlResponse.result.will_be_expired_at;
+                } else {
+                    throw new Error('알 수 없는 응답 구조입니다.');
+                }
+
+                uploadUrl = responseData.upload_url;
+                progressUrl = responseData.progress_url;
+                uploadFileKey = responseData.upload_file_key;
+
+                const expireDate = KollusUtils.formatExpireTime(expireTimestamp);
+
+                showResponse('urlResponse',
+                    `✅ 업로드 URL 생성 성공!\n\n` +
+                    `📤 업로드 URL: ${uploadUrl}\n` +
+                    `📊 진행률 URL: ${progressUrl}\n` +
+                    `🔑 파일 키: ${uploadFileKey}\n` +
+                    `⏰ 만료 시간: ${expireDate}`,
+                    'success'
+                );
+
+                // 업로드 섹션 활성화
+                document.getElementById('uploadSection').classList.add('active');
+            } catch (error) {
+                showResponse('urlResponse', `❌ 요청 실패: ${error.message}`, 'error');
+            }
+        }
+
+        async function uploadFile() {
+            if (!uploadUrl || !api) {
+                showResponse('uploadResponse', '먼저 업로드 URL을 생성해주세요.', 'error');
+                return;
+            }
+
+            const fileInput = document.getElementById('fileInput');
+            const returnUrl = document.getElementById('returnUrl').value.trim();
+
+            if (!fileInput.files[0]) {
+                showResponse('uploadResponse', '업로드할 파일을 선택해주세요.', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            // 파일 타입 검증
+            console.log('파일 정보:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+            
+            // 추가 파일 타입 검증 (QuickTime 파일 특별 처리)
+            const fileName = file.name.toLowerCase();
+            const isQuickTimeFile = fileName.endsWith('.mov') || file.type === 'video/quicktime';
+            const isVideoFile = file.type.startsWith('video/') || fileName.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v|3gp|ts|mts|m2ts|vob|ogv|asf|rm|rmvb|dv|mxf|xvid|divx|f4v|qt)$/);
+            const isAudioFile = file.type.startsWith('audio/') || fileName.match(/\.(mp3|wav|aac|ogg|flac|m4a|wma|ra|amr|ape|opus)$/);
+            
+            if (!KollusUtils.isValidFileType(file) && !isQuickTimeFile && !isVideoFile && !isAudioFile) {
+                showResponse('uploadResponse', `지원하지 않는 파일 타입입니다: ${file.name} (${file.type || '알 수 없는 타입'}). 비디오나 오디오 파일을 선택해주세요.`, 'error');
+                return;
+            }
+
+            try {
+                showResponse('uploadResponse', '파일 업로드 중...', '');
+                document.getElementById('progressBar').style.display = 'block';
+
+                // 진행률 모니터링 시작
+                if (progressUrl) {
+                    progressMonitor = new UploadProgressMonitor(progressUrl);
+                    progressMonitor.start({
+                        onProgress: (progress) => {
+                            updateProgress(progress);
+                        },
+                        onComplete: () => {
+                            console.log('업로드 완료!');
+                        },
+                        onError: (error) => {
+                            console.error('진행률 모니터링 오류:', error);
+                        }
+                    });
+                }
+
+                const uploadResponse = await api.uploadFile({
+                    uploadUrl: uploadUrl,
+                    file: file,
+                    returnUrl: returnUrl
+                });
+
+                // 업로드 응답 디버깅
+                console.log('업로드 응답:', uploadResponse);
+                console.log('응답 타입:', typeof uploadResponse);
+                console.log('응답 키들:', Object.keys(uploadResponse));
+
+                // 업로드 성공 여부 확인 (다양한 응답 구조 지원)
+                const isSuccess = uploadResponse.result === 'S' || 
+                                uploadResponse.status === 'ok' || 
+                                uploadResponse.success === true ||
+                                (uploadResponse.message && uploadResponse.message.toLowerCase().includes('success'));
+
+                if (isSuccess) {
+                    showResponse('uploadResponse',
+                        `✅ 파일 업로드 성공!\n\n` +
+                        `📁 파일명: ${file.name}\n` +
+                        `📏 파일 크기: ${KollusUtils.formatFileSize(file.size)}\n` +
+                        `📊 결과: ${uploadResponse.message || '업로드 완료'}`,
+                        'success'
+                    );
+                    updateProgress(100);
+                } else {
+                    const errorMessage = uploadResponse.message || uploadResponse.error || '알 수 없는 오류';
+                    showResponse('uploadResponse',
+                        `❌ 업로드 실패: ${errorMessage}`,
+                        'error'
+                    );
+                }
+
+                // 진행률 모니터링 중지
+                if (progressMonitor) {
+                    progressMonitor.stop();
+                }
+            } catch (error) {
+                showResponse('uploadResponse', `❌ 업로드 실패: ${error.message}`, 'error');
+                if (progressMonitor) {
+                    progressMonitor.stop();
+                }
+            }
+        }
+
+        async function checkProgress() {
+            if (!progressUrl || !api) return;
+
+            try {
+                const result = await api.checkProgress(progressUrl);
+
+                if (result.error === 0 && result.result && result.result.progress !== undefined) {
+                    const progress = result.result.progress;
+                    updateProgress(progress);
+                    showResponse('uploadResponse', `📊 현재 진행률: ${progress}%`, '');
+                }
+            } catch (error) {
+                console.log('진행률 체크 실패:', error);
+            }
+        }
+
+        function updateProgress(percentage) {
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = percentage + '%';
+            progressFill.textContent = percentage + '%';
+        }
+
+        function showResponse(elementId, message, type) {
+            const responseDiv = document.getElementById(elementId);
+            responseDiv.style.display = 'block';
+            responseDiv.className = `response-container ${type}`;
+
+            if (type === 'error' || type === 'success') {
+                responseDiv.innerHTML = `<pre>${message}</pre>`;
+            } else {
+                responseDiv.innerHTML = message;
+            }
+        }
+
+        function clearResponse() {
+            document.getElementById('urlResponse').style.display = 'none';
+            document.getElementById('uploadResponse').style.display = 'none';
+            document.getElementById('uploadSection').classList.remove('active');
+            document.getElementById('progressBar').style.display = 'none';
+
+            uploadUrl = '';
+            progressUrl = '';
+            uploadFileKey = '';
+            
+            if (progressMonitor) {
+                progressMonitor.stop();
+            }
+        }
+
+        // DOM이 완전히 로드된 후 이벤트 리스너 등록
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('createUrlBtn').addEventListener('click', createUploadUrl);
+            document.getElementById('clearBtn').addEventListener('click', clearResponse);
+            document.getElementById('uploadBtn').addEventListener('click', uploadFile);
+            document.getElementById('progressBtn').addEventListener('click', checkProgress);
+        });
+    </script>
+</body>
+</html>
