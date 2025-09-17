@@ -1,10 +1,10 @@
-# Kollus Upload API
+# with ai project hub
 
-Kollus Upload API TypeScript 라이브러리와 테스트 페이지입니다.
+claude 와 cursor 를 활용하여 만든 ai project page
 
 ## 🚀 배포된 사이트
 
-GitHub Pages를 통해 배포된 사이트: https://hye-ung97.github.io/kollus-upload-api/
+GitHub Pages를 통해 배포된 사이트: [https://hye-ung97.github.io/kollus-upload-api/](https://hye-ung97.github.io/with-ai/)
 
 ## 📦 설치 및 실행
 
