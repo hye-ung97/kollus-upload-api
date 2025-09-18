@@ -28,7 +28,7 @@
         }
 
         .header {
-            background: #fee500;
+            background: linear-gradient(135deg, #f8efc0 0%, #fee500 100%);
             color: #191919;
             padding: 40px 30px;
             text-align: center;
@@ -139,6 +139,14 @@
             color: #191919;
         }
 
+        .summary-card .value.blue {
+            color: #0984ef;
+        }
+
+        .summary-card .value.red {
+            color: #e53e3e;
+        }
+
         .table-container {
             background: white;
             border-radius: 16px;
@@ -211,8 +219,18 @@
             font-weight: 600;
         }
 
-        .savings-count {
+        .cash-flow-positive {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .cash-flow-negative {
             color: #e53e3e;
+            font-weight: 600;
+        }
+
+        .savings-count {
+            color: #191919;
             font-weight: 600;
         }
 
@@ -277,9 +295,10 @@
     <div class="explanation">
         <h3>💡 26주 만기 적금 풍차돌리기</h3>
         <p><strong>1~26주:</strong> 매주 새로운 적금 시작 (적금 개수 1개씩 증가)</p>
-        <p><strong>27주차부터:</strong> 만기된 적금은 해지하고 새 적금 시작 (항상 26개 유지)</p>
-        <p><strong>장점:</strong> 27주차부터는 매주 만기금이 나오면서 동시에 새 적금도 시작!</p>
-        <p>각 적금은 26주 동안 매주 일정 금액씩 증가하며, 만기 시 원금과 이자를 받습니다.</p>
+        <p><strong>27주차부터:</strong> 만기된 적금의 원금(702,000원)을 26개 통장에 분산 투자!</p>
+        <p><strong>풍차돌리기 효과:</strong> 27주차부터는 매주 702,000원으로 고정된 주간 적립액으로 현금흐름 최적화!</p>
+        <p><strong>핵심:</strong> 만기금 → 702,000원 고정 → 만기금 → 702,000원 고정의 무한 순환 구조!</p>
+        <p>각 적금은 26주 동안 매주 일정 금액씩 증가하며, 만기 시 원금과 이자를 받아 원금(702,000원)을 26개 통장에 분산 투자합니다.</p>
     </div>
 
     <div class="controls">
@@ -308,7 +327,7 @@
         <div class="summary">
             <div class="summary-card">
                 <h3>최종 총 적립 금액</h3>
-                <div class="value" id="totalAmount">₩0</div>
+                <div class="value blue" id="totalAmount">₩0</div>
             </div>
             <div class="summary-card">
                 <h3>마지막 주 적립액</h3>
@@ -316,7 +335,7 @@
             </div>
             <div class="summary-card">
                 <h3>예상 이자</h3>
-                <div class="value" id="totalInterest">₩0</div>
+                <div class="value red" id="totalInterest">₩0</div>
             </div>
             <div class="summary-card">
                 <h3>매주 만기금 (27주차부터)</h3>
@@ -364,6 +383,7 @@
         let totalPrincipal = 0; // 총 원금 (계속 누적)
         let totalInterest = 0; // 총 이자 (계속 누적)
         let weeklyMaturityAmount = 0; // 27주차부터의 매주 만기금
+        let cumulativeCashFlow = 0; // 누적 현금흐름 (풍차돌리기 효과)
 
         for (let week = 1; week <= totalWeeks; week++) {
             let activeSavingsCount = Math.min(week, maturityWeeks); // 최대 26개
@@ -372,41 +392,46 @@
             let netCashFlow = 0; // 순 현금흐름
 
             // 현재 진행 중인 각 적금의 납입액 계산
-            for (let i = 1; i <= activeSavingsCount; i++) {
-                let savingAge;
-
-                if (week <= maturityWeeks) {
-                    // 1~26주차: 적금 나이는 시작된 주차부터 계산
-                    savingAge = week - i + 1;
-                } else {
-                    // 27주차부터: 모든 적금은 각각 다른 나이를 가짐 (1~26주차)
-                    savingAge = ((week - i) % maturityWeeks) + 1;
+            if (week <= maturityWeeks) {
+                // 1~26주차: 각 적금의 납입액 계산
+                for (let i = 1; i <= activeSavingsCount; i++) {
+                    let savingAge = week - i + 1;
+                    if (savingAge > 0) {
+                        const depositAmount = startAmount + (weeklyIncrease * (savingAge - 1));
+                        weeklyDeposit += depositAmount;
+                    }
                 }
-
-                if (savingAge > 0) {
-                    const depositAmount = startAmount + (weeklyIncrease * (savingAge - 1));
-                    weeklyDeposit += depositAmount;
-                }
+            } else {
+                // 27주차부터: 풍차돌리기로 702,000원만 계산 (기존 통장 납입액은 계산하지 않음)
+                weeklyDeposit = 0; // 기존 통장 납입액은 0으로 초기화
             }
 
-            totalPrincipal += weeklyDeposit;
+            // 최종 적립금액 계산 (1~26주차만 원금 누적)
+            if (week <= maturityWeeks) {
+                totalPrincipal += weeklyDeposit;
+            }
 
             // 만기금 계산 (27주차부터)
             if (week > maturityWeeks) {
-                // 만기되는 적금의 총액 및 이자 계산
+                // 해당 주차에 만기되는 적금 계산 (27주차 = 1주차 적금, 28주차 = 2주차 적금)
+                const maturedSavingWeek = week - maturityWeeks; // 만기되는 적금의 시작 주차
+                
                 let maturityPrincipal = 0;
                 let maturityInterest = 0;
 
-                // 26주간의 각 납입금과 그에 대한 이자를 개별 계산
+                // 해당 적금의 26주간 납입금과 이자 계산
                 for (let savingWeek = 1; savingWeek <= maturityWeeks; savingWeek++) {
                     const depositAmount = startAmount + (weeklyIncrease * (savingWeek - 1));
                     maturityPrincipal += depositAmount;
 
                     // 각 납입금이 운용된 기간 (주 단위)
-                    const operatingWeeks = maturityWeeks - savingWeek;
+                    // 1주차 납입금: 1주차부터 26주차까지 = 26주간 운용
+                    // 2주차 납입금: 2주차부터 26주차까지 = 25주간 운용
+                    const operatingWeeks = maturityWeeks - savingWeek + 1;
                     // 연 단위로 변환
                     const operatingYears = operatingWeeks / 52;
                     // 각 납입금에 대한 개별 이자 계산 (단리)
+                    // 연 5.00% 이율 적용
                     const individualInterest = depositAmount * annualInterestRate * operatingYears;
                     maturityInterest += individualInterest;
                 }
@@ -419,25 +444,66 @@
                 }
             }
 
-            netCashFlow = maturityReceived - weeklyDeposit;
+            // 풍차돌리기: 27주차부터 만기된 원금을 26개 통장에 분산 투자
+            let windmillDeposit = 0;
+            if (maturityReceived > 0) {
+                // 만기된 적금의 원금 부분을 26개 통장에 분산 투자
+                // 26주간의 총 원금 계산
+                let maturityPrincipal = 0;
+                for (let savingWeek = 1; savingWeek <= maturityWeeks; savingWeek++) {
+                    const depositAmount = startAmount + (weeklyIncrease * (savingWeek - 1));
+                    maturityPrincipal += depositAmount;
+                }
+                
+                windmillDeposit = maturityPrincipal; // 702,000원을 26개 통장에 분산
+                weeklyDeposit += windmillDeposit;
+                // 27주차부터는 풍차돌리기로 기존 돈 활용하므로 totalPrincipal에 추가하지 않음
+            }
+
+            // 순 현금흐름 계산
+            if (week <= maturityWeeks) {
+                // 1~26주차: 돈만 나가고 안 들어옴 → 음수
+                netCashFlow = -weeklyDeposit;
+            } else {
+                // 27주차부터: 만기금 수령 - 주간 적립액 = 이자 수익 → 양수
+                netCashFlow = maturityReceived - weeklyDeposit;
+            }
+            cumulativeCashFlow += netCashFlow;
 
             const maturityText = maturityReceived > 0 ? `₩${formatNumber(Math.round(maturityReceived))}` : '-';
-            const cashFlowClass = netCashFlow >= 0 ? 'total' : 'amount';
+            const cashFlowClass = netCashFlow > 0 ? 'cash-flow-positive' : netCashFlow < 0 ? 'cash-flow-negative' : 'amount';
             const cashFlowText = netCashFlow !== 0 ? `₩${formatNumber(Math.round(Math.abs(netCashFlow)))}` : '-';
             const cashFlowPrefix = netCashFlow > 0 ? '+' : netCashFlow < 0 ? '-' : '';
+
+            // 풍차돌리기 표시
+            const windmillNote = windmillDeposit > 0 ? ' (풍차돌리기)' : '';
 
             tableHTML += `
                     <tr>
                         <td class="week-cell">${week}주차</td>
                         <td class="savings-count">${activeSavingsCount}개</td>
-                        <td class="amount">₩${formatNumber(weeklyDeposit)}</td>
+                        <td class="amount">₩${formatNumber(weeklyDeposit)}${windmillNote}</td>
                         <td class="total">${maturityText}</td>
                         <td class="${cashFlowClass}">${cashFlowPrefix}${cashFlowText}</td>
                     </tr>
                 `;
         }
 
-        const lastWeekDeposit = Math.min(totalWeeks, maturityWeeks) * (startAmount + (weeklyIncrease * (maturityWeeks - 1)));
+        // 마지막 주 적립액 계산 (26주차의 실제 납입액)
+        let lastWeekDeposit = 0;
+        if (totalWeeks >= maturityWeeks) {
+            // 26주차의 각 적금 납입액 계산
+            for (let i = 1; i <= maturityWeeks; i++) {
+                const depositAmount = startAmount + (weeklyIncrease * (maturityWeeks - i));
+                lastWeekDeposit += depositAmount;
+            }
+        } else {
+            // 26주 미만인 경우 해당 주차의 납입액 계산
+            for (let i = 1; i <= totalWeeks; i++) {
+                const depositAmount = startAmount + (weeklyIncrease * (totalWeeks - i));
+                lastWeekDeposit += depositAmount;
+            }
+        }
 
         // 결과 업데이트
         document.getElementById('totalAmount').textContent = `₩${formatNumber(totalPrincipal)}`;
