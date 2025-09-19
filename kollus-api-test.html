@@ -259,9 +259,173 @@
         </div>
     </div>
 
-    <script type="module">
-        // TypeScript 모듈에서 클래스들을 import
-        import { KollusUploadAPI, UploadProgressMonitor, KollusUtils } from './dist/index.js';
+    <script>
+        // Kollus API 클래스들을 직접 정의
+        console.log('Kollus API 클래스 로드 시작...');
+        
+        class KollusUploadAPI {
+            constructor(accessToken, baseUrl = 'https://c-api-kr.kollus.com') {
+                this.accessToken = accessToken;
+                this.baseUrl = baseUrl;
+            }
+            
+            async createUploadUrl(params) {
+                const { expireTime, categoryKey, title, uploadType, profileKey } = params;
+                // API URL 설정
+                let apiUrl = `${this.baseUrl}/api/upload/create-url`;
+                if (uploadType === 'passthrough' || uploadType === 'filelive') {
+                    apiUrl = 'https://upload.kr.kollus.com/api/v1/create_url';
+                }
+                // POST 데이터 구성
+                const postData = {
+                    expire_time: expireTime,
+                    category_key: categoryKey,
+                    title: title,
+                    is_encryption_upload: 0,
+                    is_audio_upload: 0,
+                    is_passthrough: uploadType === 'passthrough' ? 1 : 0
+                };
+                // 패스쓰루 업로드시 profile_key 추가
+                if (uploadType === 'passthrough') {
+                    if (!profileKey) {
+                        throw new Error('Profile Key는 패스쓰루 업로드시 필수입니다.');
+                    }
+                    postData.profile_key = profileKey;
+                }
+                // 파일라이브 업로드시 selected_profile_key 추가
+                if (uploadType === 'filelive') {
+                    postData.selected_profile_key = categoryKey + '-filelive';
+                }
+                const formData = new FormData();
+                Object.keys(postData).forEach(key => {
+                    if (postData[key] !== undefined && postData[key] !== '') {
+                        formData.append(key, String(postData[key]));
+                    }
+                });
+                const response = await fetch(`${apiUrl}?access_token=${encodeURIComponent(this.accessToken)}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                return await response.json();
+            }
+            
+            async uploadFile(params) {
+                const { uploadUrl, file, returnUrl } = params;
+                const formData = new FormData();
+                formData.append('upload-file', file);
+                formData.append('disable_alert', '1');
+                formData.append('accept', 'application/json');
+                if (returnUrl) {
+                    formData.append('return_url', returnUrl);
+                    formData.append('redirection_scope', 'outer');
+                }
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                return await response.json();
+            }
+            
+            async checkProgress(progressUrl) {
+                const response = await fetch(progressUrl);
+                return await response.json();
+            }
+        }
+        
+        class UploadProgressMonitor {
+            constructor(progressUrl) {
+                this.progressUrl = progressUrl;
+            }
+            
+            start(params) {
+                const { onProgress, onComplete, onError, intervalMs = 1000 } = params;
+                this.onProgress = onProgress;
+                this.onComplete = onComplete;
+                this.onError = onError;
+                this.intervalId = setInterval(async () => {
+                    try {
+                        const response = await fetch(this.progressUrl);
+                        const result = await response.json();
+                        if (result.error === 0 && result.result) {
+                            const progress = result.result.progress;
+                            this.onProgress?.(progress);
+                            if (progress >= 100) {
+                                this.stop();
+                                this.onComplete?.();
+                            }
+                        }
+                    }
+                    catch (error) {
+                        this.stop();
+                        this.onError?.(error);
+                    }
+                }, intervalMs);
+            }
+            
+            stop() {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = undefined;
+                }
+            }
+        }
+        
+        class KollusUtils {
+            static formatExpireTime(timestamp) {
+                return new Date(timestamp * 1000).toLocaleString('ko-KR', {
+                    timeZone: 'Asia/Seoul'
+                });
+            }
+            
+            static formatFileSize(bytes) {
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                if (bytes === 0)
+                    return '0 Bytes';
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+            }
+            
+            static isValidFileType(file) {
+                // 지원하는 MIME 타입들
+                const validMimeTypes = [
+                    // 비디오 파일
+                    'video/mp4', 'video/avi', 'video/mov', 'video/quicktime', 'video/wmv', 'video/flv',
+                    'video/webm', 'video/mkv', 'video/m4v', 'video/3gp', 'video/ts',
+                    'video/mts', 'video/m2ts', 'video/vob', 'video/ogv', 'video/asf',
+                    'video/rm', 'video/rmvb', 'video/dv', 'video/mxf', 'video/xvid',
+                    'video/x-msvideo', 'video/x-ms-wmv', 'video/x-flv', 'video/x-matroska',
+                    // 오디오 파일
+                    'audio/mp3', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/flac',
+                    'audio/m4a', 'audio/wma', 'audio/ra', 'audio/amr', 'audio/ape',
+                    'audio/opus', 'audio/webm', 'audio/mp4', 'audio/3gpp', 'audio/3gpp2',
+                    'audio/x-wav', 'audio/x-aiff', 'audio/x-m4a', 'audio/x-ms-wma'
+                ];
+                // 지원하는 파일 확장자들
+                const validExtensions = [
+                    // 비디오 확장자
+                    '.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv', '.m4v',
+                    '.3gp', '.ts', '.mts', '.m2ts', '.vob', '.ogv', '.asf', '.rm',
+                    '.rmvb', '.dv', '.mxf', '.xvid', '.divx', '.f4v', '.f4p', '.f4a',
+                    '.f4b', '.m4b', '.m4p', '.m4r', '.m4v', '.3g2', '.3gp2', '.3gpp',
+                    '.3gpp2', '.3ga', '.3ga2', '.3gpa', '.3gpp2', '.3gpp3', '.3gpp4',
+                    // 오디오 확장자
+                    '.mp3', '.wav', '.aac', '.ogg', '.flac', '.m4a', '.wma', '.ra',
+                    '.amr', '.ape', '.opus', '.webm', '.mp4', '.3gpp', '.3gpp2', '.3ga',
+                    '.3ga2', '.3gpa', '.3gpp3', '.3gpp4', '.m4b', '.m4p', '.m4r', '.f4a',
+                    '.f4b', '.f4p', '.f4v', '.f4r', '.f4s', '.f4t', '.f4u', '.f4w',
+                    '.f4x', '.f4y', '.f4z'
+                ];
+                // MIME 타입 검증
+                if (validMimeTypes.includes(file.type)) {
+                    return true;
+                }
+                // 파일 확장자 검증 (MIME 타입이 없는 경우)
+                const fileName = file.name.toLowerCase();
+                return validExtensions.some(ext => fileName.endsWith(ext));
+            }
+        }
+        
+        console.log('Kollus API 클래스 로드 완료');
 
         let api;
         let uploadUrl = '';
@@ -298,12 +462,20 @@
                 
                 // 디버깅: API 클래스 확인
                 console.log('KollusUploadAPI 클래스:', typeof KollusUploadAPI);
+                console.log('KollusUploadAPI 클래스 내용:', KollusUploadAPI);
                 console.log('API 인스턴스 생성 시도...');
 
                 // API 인스턴스 생성
                 api = new KollusUploadAPI(accessToken);
                 
                 console.log('API 인스턴스 생성 성공:', api);
+                console.log('API 요청 파라미터:', {
+                    expireTime: expireTime,
+                    categoryKey: categoryKey,
+                    title: title,
+                    uploadType: uploadType,
+                    profileKey: profileKey
+                });
                 console.log('API 요청 시작...');
 
                 const urlResponse = await api.createUploadUrl({
@@ -353,6 +525,8 @@
                 // 업로드 섹션 활성화
                 document.getElementById('uploadSection').classList.add('active');
             } catch (error) {
+                console.error('API 요청 오류:', error);
+                console.error('오류 스택:', error.stack);
                 showResponse('urlResponse', `❌ 요청 실패: ${error.message}`, 'error');
             }
         }
