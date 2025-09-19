@@ -279,7 +279,8 @@
             }
         });
 
-                async function createUploadUrl() {
+        async function createUploadUrl() {
+            console.log('createUploadUrl 함수 시작');
             const accessToken = document.getElementById('accessToken').value.trim();
             const categoryKey = document.getElementById('categoryKey').value.trim();
             const expireTime = parseInt(document.getElementById('expireTime').value);
@@ -507,7 +508,21 @@
 
         // DOM이 완전히 로드된 후 이벤트 리스너 등록
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('createUrlBtn').addEventListener('click', createUploadUrl);
+            console.log('DOM 로드 완료, 이벤트 리스너 등록 중...');
+            
+            const createUrlBtn = document.getElementById('createUrlBtn');
+            console.log('createUrlBtn 요소:', createUrlBtn);
+            
+            if (createUrlBtn) {
+                createUrlBtn.addEventListener('click', function(e) {
+                    console.log('업로드 URL 생성 버튼 클릭됨!');
+                    e.preventDefault();
+                    createUploadUrl().catch(error => {
+                        console.error('createUploadUrl 오류:', error);
+                    });
+                });
+            }
+            
             document.getElementById('clearBtn').addEventListener('click', clearResponse);
             document.getElementById('uploadBtn').addEventListener('click', uploadFile);
             document.getElementById('progressBtn').addEventListener('click', checkProgress);
