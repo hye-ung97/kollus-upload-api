@@ -10,7 +10,7 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #95a4e8 0%, #a67fcd 100%);
             min-height: 100vh;
         }
 
@@ -178,9 +178,39 @@
             color: #0066cc;
             margin-top: 0;
         }
+
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            z-index: 1000;
+        }
+
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
     </style>
 </head>
 <body>
+    <a href="index.html" class="home-button">
+        🏠 홈으로 가기
+    </a>
+    
     <div class="container">
         <h1>🎬 Kollus Upload API 테스트</h1>
 

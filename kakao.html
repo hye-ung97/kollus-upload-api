@@ -260,6 +260,33 @@
             font-weight: 500;
         }
 
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #fee500 0%, #ffcd00 100%);
+            color: #191919;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(254, 229, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(254, 229, 0, 0.4);
+            background: linear-gradient(135deg, #ffcd00 0%, #fee500 100%);
+        }
+
         @media (max-width: 768px) {
             .controls {
                 flex-direction: column;
@@ -286,6 +313,10 @@
     </style>
 </head>
 <body>
+    <a href="index.html" class="home-button">
+        🏠 홈으로 가기
+    </a>
+    
 <div class="container">
     <div class="header">
         <h1>🌪️ 카카오 26주 적금 풍차돌리기</h1>
